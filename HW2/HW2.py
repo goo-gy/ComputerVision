@@ -39,6 +39,8 @@ def gauss2d(sigma):
     return np.outer(gaussX, gaussY)
 
 def convolve2d(array2d, filter):
+    # filter 좌우상하 반전
+    filter = np.flip(filter)
     # 연산을 위해 float로 설정
     array2d = array2d.astype(np.float32) 
     filter = filter.astype(np.float32)
@@ -62,9 +64,7 @@ def convolve2d(array2d, filter):
 
 def gaussconvolve2d(array2d, sigma):
     gaussFilter = gauss2d(sigma)
-    # filter 좌우상하 반전
-    filter = np.flip(gaussFilter)
-    return convolve2d(array2d, filter)
+    return convolve2d(array2d, gaussFilter)
 
 def imageBlurGrey(imagePath, sigma):
     img = Image.open(imagePath)
@@ -137,6 +137,6 @@ def makeHybridImage(imagePath1, imagePath2, sigma, saveName):
 
 # result = gaussconvolve2d(boxfilter(5), 0.5)
 # imageBlurGrey("hw2_image/2b_dog.bmp", 3)
-# makeBlurImage("hw2_image/2b_dog.bmp", 5, "lowFrequencyDog.png")
+makeBlurImage("hw2_image/2b_dog.bmp", 5, "lowFrequencyDog.png")
 # makeDetailImage("hw2_image/2a_cat.bmp", 5, "highFrequencyCat.png")
-makeHybridImage("hw2_image/2b_dog.bmp", "hw2_image/2a_cat.bmp", 5, "hybridDogCat.png")
+# makeHybridImage("hw2_image/2b_dog.bmp", "hw2_image/2a_cat.bmp", 5, "hybridDogCat.png")
