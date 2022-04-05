@@ -64,14 +64,14 @@ def gaussconvolve2d(array, sigma):
     return convolve2d(array, gaussFilter)
 
 def sobel_filters(img):
-    # 편미분값을 구해주는 filter와 convolution
-    xfilter = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
-    yfilter = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
-    xIntegrity = convolve2d(img, xfilter)
-    yIntegrity = convolve2d(img, yfilter)
+    # Derivate Kernel을 Convolution하여 Ix, Iy 구함
+    IxKernel = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
+    IyKernel = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
+    Ix = convolve2d(img, IxKernel)
+    Iy = convolve2d(img, IyKernel)
     
-    G = np.hypot(xIntegrity, yIntegrity) # sqrt(Ix^2 + Iy^2)
-    theta = np.arctan2(yIntegrity, xIntegrity) # tan^(-1)(yIntegrity / xIntegrity)
+    G = np.hypot(Ix, Iy) # sqrt(Ix^2 + Iy^2)
+    theta = np.arctan2(Iy, Ix) # tan^(-1)(Iy / Ix)
 
     # mapping (0 to 255)
     maxVal = G.max()
@@ -80,30 +80,35 @@ def sobel_filters(img):
     return (G, theta)
 
 def getDirection(degree):
+    # 가장 가까운 방향을 찾아냄
     directionArray = np.array([0, 45, 90, 135, 180])
     index = (np.abs(directionArray - degree)).argmin()
     return directionArray[index % 4]
 
 def non_max_suppression(G, theta):
-    theta = (theta + np.pi) % np.pi
-    degrees = theta * 180 / np.pi
+	# reduce range : 2 * pi => pi
+	theta = (theta + np.pi) % np.pi
+	# radian to degree
+	degrees = theta * 180 / np.pi
 
-    thinEdge = np.zeros(G.shape)
-    ySize, xSize = G.shape
-    for y in range(1, ySize - 1): # 이미지 끝 부분은 제외
-        for x in range(1, xSize - 1):
-            degree = getDirection(degrees[y][x]) # 가장 가까운 방향을 찾아냄
-            areaG = G[y - 1 : y + 2, x - 1 : x + 2]
-            target = np.array([0, 0, 0]) # degree에 따라 확인할 target 변경
-            if(degree == 0):     target = areaG[1, :]
-            elif(degree == 45):  target = np.diag(np.fliplr(areaG))
-            elif(degree == 90):  target = areaG[:, 1]
-            elif(degree == 135): target = np.diag(areaG)
-            else: assert True, "direction is not valid"
-            
-            if(target.argmax() == 1): # pixel이 정해진 방향에서 가장 큰 gradient를 가지는지 확인
-                thinEdge[y][x] = G[y][x]
-    return thinEdge
+	thinEdge = np.zeros(G.shape)
+	ySize, xSize = G.shape
+	for y in range(1, ySize - 1): # 이미지 끝 부분은 제외
+		for x in range(1, xSize - 1):
+			areaG = G[y - 1 : y + 2, x - 1 : x + 2]
+			# degree에 따라 확인할 target 변경
+			degree = getDirection(degrees[y][x])
+			target = np.array([0, 0, 0])
+			if(degree == 0):     target = areaG[1, :]
+			elif(degree == 45):  target = np.diag(np.fliplr(areaG))
+			elif(degree == 90):  target = areaG[:, 1]
+			elif(degree == 135): target = np.diag(areaG)
+			else: assert True, "direction is not valid"
+	
+			# pixel이 지정 방향에서 max gradient를 가지는지 확인
+			if(target.argmax() == 1):
+				thinEdge[y][x] = G[y][x]
+	return thinEdge
 
 def double_thresholding(img):
     diff = img.max() - img.min()
@@ -115,10 +120,11 @@ def double_thresholding(img):
     return thresholded
 
 def DFS(img, centerY, centerX):
-    # 이미지 끝 부분은 제외
     ySize, xSize = img.shape
+    # 이미지 끝 부분은 제외
     if(centerY <= 0 or centerX <= 0 or centerY >= ySize - 1 or centerX >= xSize - 1):
         return
+    # 연결된 모든 weak edge를 strong edge로 변환
     for y in range(centerY - 1, centerY + 2):
         for x in range(centerX - 1, centerX + 2):
             if(img[y][x] == WEAK):
@@ -126,9 +132,11 @@ def DFS(img, centerY, centerX):
                 DFS(img, y, x)
 
 def hysteresis(img):
+    # 모든 strong edge를 순회하여 DFS
     strongY, strongX = np.where(img == STRONG)
     for i in range(len(strongY)):
         DFS(img, strongY[i], strongX[i])
+    # 나머지 weak edge는 제거
     img = np.where(img == WEAK, 0, img)
     return img
 
@@ -137,9 +145,7 @@ def problem1():
     imgGrey = img.convert('L')
     arrayGrey = np.asarray(imgGrey)
     arrayGreyBlur = gaussconvolve2d(arrayGrey, SIGMA)
-    arrayGreyBlur = arrayGreyBlur.astype(np.uint8)
-    imgGreyBlur = Image.fromarray(arrayGreyBlur)
-    imgGreyBlur.save('problem1.png')
+    arrayToImg(arrayGreyBlur, 'problem1.png')
     return arrayGreyBlur
 
 def problem2(): 
