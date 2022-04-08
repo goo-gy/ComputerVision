@@ -128,8 +128,11 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# zip
+**/*.zip
 
 # Latex
 **/*.aux
 **/*.synctex.gz
 **/*.log
+**/*.toc
