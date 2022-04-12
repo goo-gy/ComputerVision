@@ -57,27 +57,16 @@ def FindBestMatches(descriptors1, descriptors2, threshold):
     assert isinstance(threshold, float)
     ## START
     ## the following is just a placeholder to show you the output format
-    print("FindBestMatches")
-    print(descriptors1.shape)
-    print(descriptors2.shape)
     matched_pairs = []
-    # TODO : with numpy computing
-
-    INF = 123456789
-    for index1, vector1 in enumerate(descriptors1):
-        minAngle = INF
-        bestIndex = None
-        minAngle2nd = INF     
-        for index2, vector2 in enumerate(descriptors2):
-            angle = np.arccos(np.dot(vector1, vector2))
-            if(angle < minAngle):
-                minAngle2nd = minAngle
-                bestIndex = index2
-                minAngle = angle
-        ratio = minAngle / minAngle2nd
+    angleTable = np.arccos(np.dot(descriptors1, descriptors2.T))
+    for index1, angleArray in enumerate(angleTable):
+        sortedAndleArray = list(enumerate(angleArray))
+        sortedAndleArray.sort(key=lambda t:t[1])
+        matchSt = sortedAndleArray[0]
+        matchNd = sortedAndleArray[1]
+        ratio = matchSt[1] / matchNd[1]
         if(ratio < threshold):
-            matched_pairs.append([index1, bestIndex])
-    print(matched_pairs)
+            matched_pairs.append([index1, matchNd[0]])
     ## END
     return matched_pairs
 
