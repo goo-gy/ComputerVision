@@ -1,7 +1,23 @@
+from matplotlib import scale
 import numpy as np
 import math
 import random
 
+
+def getTranform(feat1, feat2):
+    tScaling = feat1[2] / feat2[2]
+    tRotation = feat1[3] - feat2[3]
+    tRotation = (tRotation + 2 * np.pi) % (2 * np.pi)  # delete negative
+    tRotation = tRotation * 180 / np.pi                # radian to degree
+    return tScaling, tRotation
+
+def checkRange(tScaling, tRotation, tScalingComp, tRotationComp, orient_agreement, scale_agreement):
+    tScaleRange = tScaling * scale_agreement
+    if(np.abs(tScaling - tScalingComp) < tScaleRange):
+        if(np.abs(tRotation - tRotationComp) < orient_agreement or np.abs(tRotation - tRotationComp) > 360 - orient_agreement):
+            print("Y", np.abs(tScaling - tScalingComp), np.abs(tRotation - tRotationComp))
+            return True
+    return False
 
 def RANSACFilter(
         matched_pairs, keypoints1, keypoints2,
@@ -22,15 +38,45 @@ def RANSACFilter(
 
     HINTS: the "*_agreement" definitions are well-explained
            in the assignment instructions.
-    """
+    """ 
     assert isinstance(matched_pairs, list)
     assert isinstance(keypoints1, np.ndarray)
     assert isinstance(keypoints2, np.ndarray)
     assert isinstance(orient_agreement, float)
     assert isinstance(scale_agreement, float)
     ## START
+    # 1. matched_pairs 순회
+    # 2. 각 match에서 transformation 구하기 (translation, scaling, rotation)
+    # 3. 다른 모든 match를 다시 순회하면서 inlier 개수 세기
+    # 4. 순회가 끝나면 inlier가 가장 많은 match 선택
+    # 5. 해당 match에서 inlier만 추출
 
-
+    maxCount = 0
+    maxIndex = 0
+    for i, (index1, index2) in enumerate(matched_pairs):
+        tScaling, tRotation = getTranform(keypoints1[index1], keypoints2[index2])
+        inlierCount = 0
+        for comp1, comp2 in matched_pairs:
+            if(comp1 == index1 and comp2 == index2):
+                continue
+            tScalingComp, tRotationComp = getTranform(keypoints1[comp1], keypoints2[comp2])
+            if(checkRange(tScaling, tRotation, tScalingComp, tRotationComp, orient_agreement, scale_agreement)):
+                inlierCount += 1
+        if(inlierCount > maxCount):
+            maxCount = inlierCount
+            maxIndex = i
+    
+    index1, index2 = matched_pairs[maxIndex]
+    largest_set = [matched_pairs[maxIndex]]
+    tScaling, tRotation = getTranform(keypoints1[index1], keypoints2[index2])
+    inlierCount = 0
+    for comp1, comp2 in matched_pairs:
+        if(comp1 == index1 and comp2 == index2):
+            continue
+        tScalingComp, tRotationComp = getTranform(keypoints1[comp1], keypoints2[comp2])
+        if(checkRange(tScaling, tRotation, tScalingComp, tRotationComp, orient_agreement, scale_agreement)):
+            largest_set.append([comp1, comp2])
+    
     ## END
     assert isinstance(largest_set, list)
     return largest_set
@@ -60,10 +106,10 @@ def FindBestMatches(descriptors1, descriptors2, threshold):
     matched_pairs = []
     angleTable = np.arccos(np.dot(descriptors1, descriptors2.T))
     for index1, angleArray in enumerate(angleTable):
-        sortedAndleArray = list(enumerate(angleArray))
-        sortedAndleArray.sort(key=lambda t:t[1])
-        matchSt = sortedAndleArray[0]
-        matchNd = sortedAndleArray[1]
+        sortedAngleArray = list(enumerate(angleArray))
+        sortedAngleArray.sort(key=lambda t:t[1])
+        matchSt = sortedAngleArray[0]
+        matchNd = sortedAngleArray[1]
         ratio = matchSt[1] / matchNd[1]
         if(ratio < threshold):
             matched_pairs.append([index1, matchNd[0]])
