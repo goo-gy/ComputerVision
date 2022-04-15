@@ -44,31 +44,28 @@ def RANSACFilter(
     assert isinstance(orient_agreement, float)
     assert isinstance(scale_agreement, float)
     ## START
-    # 1. matched_pairs에서 랜덤으로 match 선택
-    # 2. 각 match에서 transformation 구하기 (translation, scaling, rotation)
-    # 3. 다른 모든 match를 다시 순회하면서 inlier 개수 세기
-    # 4. 1. ~ 3.을 10번 반복
-    # 5. inlier가 가장 많은 match 선택
-    # 6. 해당 match에서 inlier만 추출
-
     maxCount = 0
     maxIndex = 0
-
     for k in range(10):
+        # matched_pairs에서 랜덤으로 match 선택
         i = random.randint(0, len(matched_pairs) - 1)
         (index1, index2) = matched_pairs[i]
+        # match에서 transformation을 구한다 (scaling, rotation)
         tScaling, tRotation = getTranform(keypoints1[index1], keypoints2[index2])
         inlierCount = 0
+        # 다른 모든 match를 다시 순회하면서 inlier counting
         for comp1, comp2 in matched_pairs:
             if(comp1 == index1 and comp2 == index2):
                 continue
             tScalingComp, tRotationComp = getTranform(keypoints1[comp1], keypoints2[comp2])
             if(checkRange(tScaling, tRotation, tScalingComp, tRotationComp, orient_agreement, scale_agreement)):
                 inlierCount += 1
+        # inlier가 가장 많은 match 선택
         if(inlierCount > maxCount):
             maxCount = inlierCount
             maxIndex = i
     
+    # 선택된 match에서 동일한 방식으로 inlier만 추출하여 return
     index1, index2 = matched_pairs[maxIndex]
     largest_set = [matched_pairs[maxIndex]]
     tScaling, tRotation = getTranform(keypoints1[index1], keypoints2[index2])
@@ -107,13 +104,17 @@ def FindBestMatches(descriptors1, descriptors2, threshold):
     ## START
     ## the following is just a placeholder to show you the output format
     matched_pairs = []
+    # dot 연산을 통해 descriptor1의 각 벡터와 descriptor 2의 벡터에 대해서 모두 내적한 행렬을 생성한다.
+    # 모든 element에 arc cosine를 적용해 angle을 생성한다.
     angleTable = np.arccos(np.dot(descriptors1, descriptors2.T))
     for index1, angleArray in enumerate(angleTable):
+        # vector1과 angle이 가장 작은 vector2를 찾는다.
         sortedAngleArray = list(enumerate(angleArray))
         sortedAngleArray.sort(key=lambda t:t[1])
         matchSt = sortedAngleArray[0]
         matchNd = sortedAngleArray[1]
-        ratio = matchSt[1] / matchNd[1]
+        # best match와 second match의 angle ratio가 threshold보다 작을 때만 선택한다.
+        ratio = np.abs(matchSt[1] / matchNd[1])
         if(ratio <= threshold):
             matched_pairs.append([index1, matchSt[0]])
     ## END
