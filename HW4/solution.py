@@ -44,15 +44,19 @@ def RANSACFilter(
     assert isinstance(orient_agreement, float)
     assert isinstance(scale_agreement, float)
     ## START
-    # 1. matched_pairs 순회
+    # 1. matched_pairs에서 랜덤으로 match 선택
     # 2. 각 match에서 transformation 구하기 (translation, scaling, rotation)
     # 3. 다른 모든 match를 다시 순회하면서 inlier 개수 세기
-    # 4. 순회가 끝나면 inlier가 가장 많은 match 선택
-    # 5. 해당 match에서 inlier만 추출
+    # 4. 1. ~ 3.을 10번 반복
+    # 5. inlier가 가장 많은 match 선택
+    # 6. 해당 match에서 inlier만 추출
 
     maxCount = 0
     maxIndex = 0
-    for i, (index1, index2) in enumerate(matched_pairs):
+
+    for k in range(10):
+        i = random.randint(0, len(matched_pairs) - 1)
+        (index1, index2) = matched_pairs[i]
         tScaling, tRotation = getTranform(keypoints1[index1], keypoints2[index2])
         inlierCount = 0
         for comp1, comp2 in matched_pairs:
@@ -110,7 +114,7 @@ def FindBestMatches(descriptors1, descriptors2, threshold):
         matchSt = sortedAngleArray[0]
         matchNd = sortedAngleArray[1]
         ratio = matchSt[1] / matchNd[1]
-        if(ratio < threshold):
+        if(ratio <= threshold):
             matched_pairs.append([index1, matchSt[0]])
     ## END
     return matched_pairs
