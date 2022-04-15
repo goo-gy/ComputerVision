@@ -136,3 +136,6 @@ dmypy.json
 **/*.synctex.gz
 **/*.log
 **/*.toc
+
+**/*.fdb_latexmk
+**/*.fls
