@@ -15,7 +15,6 @@ def checkRange(tScaling, tRotation, tScalingComp, tRotationComp, orient_agreemen
     tScaleRange = tScaling * scale_agreement
     if(np.abs(tScaling - tScalingComp) < tScaleRange):
         if(np.abs(tRotation - tRotationComp) < orient_agreement or np.abs(tRotation - tRotationComp) > 360 - orient_agreement):
-            print("Y", np.abs(tScaling - tScalingComp), np.abs(tRotation - tRotationComp))
             return True
     return False
 
@@ -112,7 +111,7 @@ def FindBestMatches(descriptors1, descriptors2, threshold):
         matchNd = sortedAngleArray[1]
         ratio = matchSt[1] / matchNd[1]
         if(ratio < threshold):
-            matched_pairs.append([index1, matchNd[0]])
+            matched_pairs.append([index1, matchSt[0]])
     ## END
     return matched_pairs
 
