@@ -76,7 +76,7 @@ def RANSACFilter(
         tScalingComp, tRotationComp = getTranform(keypoints1[comp1], keypoints2[comp2])
         if(checkRange(tScaling, tRotation, tScalingComp, tRotationComp, orient_agreement, scale_agreement)):
             largest_set.append([comp1, comp2])
-    
+    # print(len(largest_set), '/', len(matched_pairs))
     ## END
     assert isinstance(largest_set, list)
     return largest_set
