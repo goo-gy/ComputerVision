@@ -34,6 +34,7 @@ def compute_fundamental(x1, x2):
         row = np.outer(x1.T[k], x2.T[k]).flatten()
         A = np.append(A, [row], axis=0)
     # compute the solution in Page 51
+
     # SVD를 사용하여 최소화 eigenvector를 구함
     F = np.linalg.svd(A)[2][-1]
     F = F.reshape((3, 3))
@@ -42,7 +43,7 @@ def compute_fundamental(x1, x2):
     # SVD를 사용하여 분리
     U, sigma, V_t = np.linalg.svd(F)
     sigma = np.diag(sigma)
-    sigma[2][2] = 0
+    sigma[2][2] = 0      # homogeneous to 2d
     F = U @ sigma @ V_t  # F = U.dot(sigma).dot(V_t)
 
     # YOUR CODE ENDS HERE
@@ -100,22 +101,30 @@ def draw_epipolar_lines(img1, img2, cor1, cor2):
     # YOUR CODE BEGINS HERE
     plt.subplot(1, 2, 1)
     plt.imshow(img1)
+    # 그릴 epipolar line의 x domain
     X = np.linspace(0, img1.shape[0], img1.shape[0] + 1)
     for i, p1 in enumerate(cor1.T):
-        color = colors[i % len(colors)]
+        color = colors[i % len(colors)]  # line 마다 다른 색상 사용
+        # epipolar line을 그리기 위한 기울기
         gradient = (e1[1] - p1[1]) / (e1[0] - p1[0])
+        # epipolar line을 y절편
         intercept = e1[1] - gradient * e1[0]
+        # 그릴 epipolar line의 y domain
         Y = gradient * X + intercept
         plt.scatter(p1[0], p1[1], color=color)
         plt.plot(X, Y, color=color)
     # ------------------------------------------------------
     plt.subplot(1, 2, 2)
     plt.imshow(img2)
+    # 그릴 epipolar line의 x domain
     X = np.linspace(0, img2.shape[0], img2.shape[0] + 1)
     for i, p2 in enumerate(cor2.T):
         color = colors[i % len(colors)]
+        # epipolar line을 그리기 위한 기울기
         gradient = (e2[1] - p2[1]) / (e2[0] - p2[0])
+        # epipolar line을 y절편
         intercept = e2[1] - gradient * e2[0]
+        # 그릴 epipolar line의 y domain
         Y = gradient * X + intercept
         plt.scatter(p2[0], p2[1], color=color)
         plt.plot(X, Y, color=color)
